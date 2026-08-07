@@ -1,0 +1,15 @@
+{
+  "google_sheet_url": "https://script.google.com/macros/s/AKfycbxf2q0hDJyu4fqaxdOSGPEOVFZ7C40qa2sMTN29L5HRoXB0uvNeb0ilKdRGVcsAd_BUUg/exec",
+  "repositories": [
+    "/Users/datacube/Files/Projects/FlutterProjects/greenfoot_flutter",
+    "/Users/datacube/Files/Projects/FlutterProjects/motomap_dealer_v2",
+    "/Users/datacube/Files/Projects/FlutterProjects/motomap_customer",
+    "/Users/datacube/Files/Projects/FlutterProjects/saathh_v2"
+  ],
+  "settings": {
+    "max_commits_per_run": null,
+    "timeout": 60,
+    "retries": 2,
+    "timezone": "Asia/Kolkata"
+  }
+}

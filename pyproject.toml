@@ -1,0 +1,19 @@
+[project]
+name = "google-sheet-gen"
+version = "0.1.0"
+description = "Git commit logger that sends data to Google Sheets"
+readme = "README.md"
+authors = [
+    { name = "riyas-dcs", email = "108170415+datacube-softwares@users.noreply.github.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+     "requests>=2.31.0",
+]
+
+[project.scripts]
+google-sheet-gen = "google_sheet_gen:main"
+
+[build-system]
+requires = ["uv_build>=0.12.2,<0.13.0"]
+build-backend = "uv_build"
