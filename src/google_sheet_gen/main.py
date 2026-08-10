@@ -98,7 +98,7 @@ if __name__ == "__main__":
         print("\n\n⚠️ Interrupted by user")
         print("ℹ️ Sheet may be partially updated. Run again to complete.")
         sys.exit(0)
-    except Exception as e:
+    except (ValueError, OSError, KeyError, TypeError) as e:
         print(f"\n❌ Unexpected error: {e}")
         import traceback
 

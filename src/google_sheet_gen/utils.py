@@ -91,7 +91,9 @@ def format_git_date(date_str: str) -> str:
     """
     try:
         date_part = date_str.split("+")[0].strip()
-        commit_date = datetime.strptime(date_part, "%a %b %d %H:%M:%S %Y")
+        commit_date = datetime.strptime(date_part, "%a %b %d %H:%M:%S %Y").replace(
+            tzinfo=UTC
+        )
         return commit_date.strftime("%Y-%m-%d %H:%M")
     except ValueError:
         return date_str
@@ -109,11 +111,13 @@ def is_in_current_month(date_str: str) -> bool:
     """
     try:
         date_part = date_str.split("+")[0].strip()
-        commit_date = datetime.strptime(date_part, "%a %b %d %H:%M:%S %Y")
+        commit_date = datetime.strptime(date_part, "%a %b %d %H:%M:%S %Y").replace(
+            tzinfo=UTC
+        )
 
-        now = datetime.now()
+        now = datetime.now(UTC)
         return commit_date.year == now.year and commit_date.month == now.month
-    except Exception:
+    except ValueError, AttributeError, IndexError:
         return False
 
 
@@ -122,7 +126,7 @@ def get_month_start_for_git() -> str:
     Get the first day of current month for git log.
     Git's --since excludes the start date, so we subtract 1 day.
     """
-    now = datetime.now()
+    now = datetime.now(UTC)
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     # Subtract 1 day to include the 1st of the month
     return (month_start - timedelta(days=1)).strftime("%Y-%m-%d")

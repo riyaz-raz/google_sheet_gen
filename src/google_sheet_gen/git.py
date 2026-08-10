@@ -112,8 +112,8 @@ class GitCommitFetcher:
         except subprocess.CalledProcessError as e:
             print(f"⚠️ Error reading git log in {repo_path}: {e}")
             return []
-        except Exception as e:
-            print(f"⚠️ Unexpected error in {repo_path}: {e}")
+        except (OSError, subprocess.SubprocessError, ValueError) as e:
+            print(f"⚠️ Error in {repo_path}: {e}")
             return []
 
     def _parse_commit_line(
@@ -174,6 +174,6 @@ class GitCommitFetcher:
                 all_commits.extend(commits)
                 print(f"      ✅ Found {len(commits)} commit(s)")
             else:
-                print(f"      ℹ️ No commits found")
+                print("      ℹ️ No commits found")
 
         return all_commits
