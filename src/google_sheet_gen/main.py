@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Git Commit Logger - Logs git commits to Google Sheets
 
@@ -7,7 +6,6 @@ Usage:
 """
 
 import sys
-from datetime import datetime
 
 from google_sheet_gen.config import ConfigLoader
 from google_sheet_gen.git import GitCommitFetcher
@@ -41,9 +39,9 @@ def main():
     settings = config.get_settings()
 
     # Get settings with defaults
-    max_commits = settings.get('max_commits_per_run', None)
-    timeout = settings.get('timeout', 120)  # Increased default timeout
-    retries = settings.get('retries', 3)
+    max_commits = settings.get("max_commits_per_run", None)
+    timeout = settings.get("timeout", 120)  # Increased default timeout
+    retries = settings.get("retries", 3)
 
     # Fetch commits
     print("📂 Fetching commits from repositories...")
@@ -65,24 +63,24 @@ def main():
         return
 
     # Sort commits by date (newest first)
-    all_commits.sort(key=lambda x: x['date'], reverse=True)
+    all_commits.sort(key=lambda x: x["date"], reverse=True)
 
     # Send to Google Sheets in a single request
     print("-" * 50)
-    sender = SheetSender(
-        sheet_url,
-        retries=retries,
-        timeout=timeout
-    )
+    sender = SheetSender(sheet_url, retries=retries, timeout=timeout)
 
     success_count, total_count = sender.send_commits(all_commits)
 
     # Print summary
     print("\n" + "=" * 50)
     if success_count == total_count and success_count > 0:
-        print(f"📊 Successfully logged all {success_count} commits for {get_current_month()}")
+        print(
+            f"📊 Successfully logged all {success_count} commits for {get_current_month()}"
+        )
     elif success_count > 0:
-        print(f"📊 Partially logged {success_count}/{total_count} commits for {get_current_month()}")
+        print(
+            f"📊 Partially logged {success_count}/{total_count} commits for {get_current_month()}"
+        )
         print("💡 Run the script again to retry failed commits")
     elif success_count == 0 and total_count > 0:
         print("❌ Failed to log commits. Check your configuration and network.")
@@ -103,5 +101,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n❌ Unexpected error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

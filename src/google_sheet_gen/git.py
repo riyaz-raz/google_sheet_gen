@@ -2,23 +2,23 @@
 Git operations for fetching commit data - Fixed date filtering.
 """
 
-import subprocess
 import os
+import subprocess
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from datetime import datetime, timedelta
-from typing import List, Optional, Dict, Any
+from typing import Any
 
 from google_sheet_gen.utils import (
     clean_commit_message,
-    format_project_name,
     format_git_date,
+    format_project_name,
 )
 
 
 class GitCommitFetcher:
     """Fetches commits from git repositories - Fixed date handling."""
 
-    def __init__(self, max_commits: Optional[int] = None):
+    def __init__(self, max_commits: int | None = None):
         """
         Initialize git commit fetcher.
 
@@ -37,13 +37,13 @@ class GitCommitFetcher:
         Get the first day of current month for git log.
         Git's --since excludes the start date, so we subtract 1 day.
         """
-        now = datetime.now()
+        now = datetime.now(UTC)
         month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         # Subtract 1 day to include the 1st of the month
         include_start = month_start - timedelta(days=1)
-        return include_start.strftime('%Y-%m-%d')
+        return include_start.strftime("%Y-%m-%d")
 
-    def get_commits_for_month(self, repo_path: str) -> List[Dict[str, Any]]:
+    def get_commits_for_month(self, repo_path: str) -> list[dict[str, Any]]:
         """
         Get all commits from current month for a repository.
         FIXED: Includes the 1st day of the month.
@@ -57,42 +57,42 @@ class GitCommitFetcher:
 
             # Get only commit hashes first (faster)
             hash_command = [
-                "git", "-C", repo_path, "log",
-                "--since", month_start,
-                "--format=%H"
+                "git",
+                "-C",
+                repo_path,
+                "log",
+                "--since",
+                month_start,
+                "--format=%H",
             ]
 
             if self.max_commits:
                 hash_command.insert(4, f"-{self.max_commits}")
 
             hash_result = subprocess.run(
-                hash_command,
-                capture_output=True,
-                text=True,
-                check=True
+                hash_command, capture_output=True, text=True, check=True
             )
 
-            hashes = hash_result.stdout.strip().split('\n')
+            hashes = hash_result.stdout.strip().split("\n")
             if not hashes or not hashes[0]:
                 return []
 
             # Then get full details for each commit
             command = [
-                "git", "-C", repo_path, "log",
-                "--since", month_start,
+                "git",
+                "-C",
+                repo_path,
+                "log",
+                "--since",
+                month_start,
                 "--pretty=format:%H|%an|%ae|%s|%ad",
-                "--no-patch"
+                "--no-patch",
             ]
 
             if self.max_commits:
                 command.insert(4, f"-{self.max_commits}")
 
-            result = subprocess.run(
-                command,
-                capture_output=True,
-                text=True,
-                check=True
-            )
+            result = subprocess.run(command, capture_output=True, text=True, check=True)
 
             output = result.stdout.strip()
             if not output:
@@ -102,7 +102,7 @@ class GitCommitFetcher:
             commits = []
             project_name = format_project_name(repo_path)
 
-            for line in output.split('\n'):
+            for line in output.split("\n"):
                 commit = self._parse_commit_line(line, project_name, repo_path)
                 if commit:
                     commits.append(commit)
@@ -117,14 +117,11 @@ class GitCommitFetcher:
             return []
 
     def _parse_commit_line(
-        self,
-        line: str,
-        project_name: str,
-        repo_path: str
-    ) -> Optional[Dict[str, Any]]:
+        self, line: str, project_name: str, repo_path: str
+    ) -> dict[str, Any] | None:
         """Parse a single git log line."""
         try:
-            hash_val, author, email, message, date = line.split('|', 4)
+            hash_val, author, email, message, date = line.split("|", 4)
 
             return {
                 "repo": project_name,
@@ -135,13 +132,13 @@ class GitCommitFetcher:
                 "email": email,
                 "message": clean_commit_message(message),
                 "raw_message": message,
-                "date": format_git_date(date)
+                "date": format_git_date(date),
             }
 
         except ValueError:
             return None
 
-    def fetch_all_repos(self, repos: List[str]) -> List[Dict[str, Any]]:
+    def fetch_all_repos(self, repos: list[str]) -> list[dict[str, Any]]:
         """
         Fetch commits from all repositories.
         """

@@ -4,7 +4,8 @@ Google Sheets integration for sending commit data.
 
 import json
 import time
-from typing import List, Dict, Any
+from typing import Any
+
 import requests
 
 
@@ -24,7 +25,7 @@ class SheetSender:
         self.retries = retries
         self.timeout = timeout
 
-    def send_commits(self, commits: List[Dict[str, Any]]) -> tuple[int, int]:
+    def send_commits(self, commits: list[dict[str, Any]]) -> tuple[int, int]:
         """
         Send commits to Google Sheets.
 
@@ -44,31 +45,27 @@ class SheetSender:
         # Prepare data
         commit_data = []
         for commit in commits:
-            commit_data.append({
-                "repo": commit["repo"],
-                "hash": commit["hash"],
-                "author": commit["author"],
-                "email": commit["email"],
-                "message": commit["message"],
-                "date": commit["date"]
-            })
+            commit_data.append(
+                {
+                    "repo": commit["repo"],
+                    "hash": commit["hash"],
+                    "author": commit["author"],
+                    "email": commit["email"],
+                    "message": commit["message"],
+                    "date": commit["date"],
+                }
+            )
 
-        payload = {
-            "action": "update_commits",
-            "commits": commit_data
-        }
+        payload = {"action": "update_commits", "commits": commit_data}
 
         return self._send_request(payload)
 
     def _send_empty_update(self) -> tuple[int, int]:
         """Send empty update to clear the sheet."""
-        payload = {
-            "action": "update_commits",
-            "commits": []
-        }
+        payload = {"action": "update_commits", "commits": []}
         return self._send_request(payload)
 
-    def _send_request(self, payload: Dict[str, Any]) -> tuple[int, int]:
+    def _send_request(self, payload: dict[str, Any]) -> tuple[int, int]:
         """
         Send HTTP request with retry logic.
 
@@ -81,7 +78,7 @@ class SheetSender:
                     self.sheet_url,
                     json=payload,
                     timeout=self.timeout,
-                    headers={"Content-Type": "application/json"}
+                    headers={"Content-Type": "application/json"},
                 )
 
                 response.raise_for_status()
@@ -99,20 +96,20 @@ class SheetSender:
                 else:
                     print(f"   ❌ Server error: {status} - {message}")
                     if attempt < self.retries - 1:
-                        print(f"      🔄 Retrying in {2 ** attempt}s...")
-                        time.sleep(2 ** attempt)
+                        print(f"      🔄 Retrying in {2**attempt}s...")
+                        time.sleep(2**attempt)
                     continue
 
             except requests.exceptions.Timeout:
                 print(f"   ⏰ Timeout (attempt {attempt + 1}/{self.retries})")
                 if attempt < self.retries - 1:
-                    print(f"      🔄 Retrying in {2 ** attempt}s...")
-                    time.sleep(2 ** attempt)
+                    print(f"      🔄 Retrying in {2**attempt}s...")
+                    time.sleep(2**attempt)
             except requests.exceptions.RequestException as e:
                 print(f"   ❌ Request failed: {e}")
                 if attempt < self.retries - 1:
-                    print(f"      🔄 Retrying in {2 ** attempt}s...")
-                    time.sleep(2 ** attempt)
+                    print(f"      🔄 Retrying in {2**attempt}s...")
+                    time.sleep(2**attempt)
             except json.JSONDecodeError as e:
                 print(f"   ❌ Invalid response: {e}")
                 break

@@ -3,17 +3,17 @@ Utility functions for the commit logger.
 """
 
 import os
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 
 def get_current_month() -> str:
     """Get current month name and year."""
-    return datetime.now().strftime("%B %Y")
+    return datetime.now(UTC).strftime("%B %Y")
 
 
 def get_current_month_start() -> datetime:
     """Get the first day of current month."""
-    now = datetime.now()
+    now = datetime.now(UTC)
     return now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
 
@@ -43,7 +43,7 @@ def clean_commit_message(message: str) -> str:
     cleaned = message
     for prefix in prefixes:
         if cleaned.lower().startswith(prefix):
-            cleaned = cleaned[len(prefix):].strip()
+            cleaned = cleaned[len(prefix) :].strip()
             break
 
     return cleaned
@@ -125,4 +125,4 @@ def get_month_start_for_git() -> str:
     now = datetime.now()
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     # Subtract 1 day to include the 1st of the month
-    return (month_start - timedelta(days=1)).strftime('%Y-%m-%d')
+    return (month_start - timedelta(days=1)).strftime("%Y-%m-%d")
