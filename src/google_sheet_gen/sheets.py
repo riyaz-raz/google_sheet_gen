@@ -1,7 +1,3 @@
-"""
-Google Sheets integration for sending commit data.
-"""
-
 import json
 import time
 from typing import Any
@@ -24,17 +20,10 @@ class SheetSender:
         self.sheet_url = sheet_url
         self.retries = retries
         self.timeout = timeout
+        self.session = requests.Session()  # Reuse connection
 
     def send_commits(self, commits: list[dict[str, Any]]) -> tuple[int, int]:
-        """
-        Send commits to Google Sheets.
-
-        Args:
-            commits: List of commit dictionaries
-
-        Returns:
-            tuple: (success_count, total_count)
-        """
+        """Send commits to Google Sheets."""
         if not commits:
             print("📊 No commits to send. Sending empty update to clear sheet...")
             return self._send_empty_update()
@@ -57,7 +46,6 @@ class SheetSender:
             )
 
         payload = {"action": "update_commits", "commits": commit_data}
-
         return self._send_request(payload)
 
     def _send_empty_update(self) -> tuple[int, int]:
@@ -66,54 +54,61 @@ class SheetSender:
         return self._send_request(payload)
 
     def _send_request(self, payload: dict[str, Any]) -> tuple[int, int]:
-        """
-        Send HTTP request with retry logic.
+        """Send HTTP request with retry logic."""
+        total = len(payload.get("commits", []))
 
-        Returns:
-            tuple: (success_count, total_count)
-        """
         for attempt in range(self.retries):
             try:
-                response = requests.post(
+                response = self.session.post(
                     self.sheet_url,
                     json=payload,
                     timeout=self.timeout,
-                    headers={"Content-Type": "application/json"},
                 )
 
+                # Try to parse JSON even if status is 500 (to read error messages)
+                try:
+                    result = response.json()
+                except json.JSONDecodeError:
+                    print(f"   ❌ Invalid JSON response: {response.text[:100]}")
+                    if attempt < self.retries - 1:
+                        time.sleep(2 ** (attempt + 1))
+                    continue
+
+                # Handle 5xx server errors (retryable)
+                if response.status_code >= 500:
+                    print(f"   ❌ Server error (HTTP {response.status_code}): {result}")
+                    if attempt < self.retries - 1:
+                        print(f"      🔄 Retrying in {2 ** (attempt + 1)}s...")
+                        time.sleep(2 ** (attempt + 1))
+                    continue
+
+                # Handle 4xx client errors (not retryable)
                 response.raise_for_status()
 
-                # Parse response
-                result = response.json()
+                # Success path
                 status = result.get("status", "unknown")
                 message = result.get("message", "")
 
                 if status == "success":
                     print(f"   ✅ Success: {message}")
-                    # Return counts based on response
-                    total = len(payload.get("commits", []))
                     return (total, total)
                 else:
-                    print(f"   ❌ Server error: {status} - {message}")
+                    print(f"   ❌ Server logic error: {status} - {message}")
                     if attempt < self.retries - 1:
-                        print(f"      🔄 Retrying in {2**attempt}s...")
-                        time.sleep(2**attempt)
+                        print(f"      🔄 Retrying in {2 ** (attempt + 1)}s...")
+                        time.sleep(2 ** (attempt + 1))
                     continue
 
             except requests.exceptions.Timeout:
                 print(f"   ⏰ Timeout (attempt {attempt + 1}/{self.retries})")
                 if attempt < self.retries - 1:
-                    print(f"      🔄 Retrying in {2**attempt}s...")
-                    time.sleep(2**attempt)
+                    print(f"      🔄 Retrying in {2 ** (attempt + 1)}s...")
+                    time.sleep(2 ** (attempt + 1))
             except requests.exceptions.RequestException as e:
                 print(f"   ❌ Request failed: {e}")
                 if attempt < self.retries - 1:
-                    print(f"      🔄 Retrying in {2**attempt}s...")
-                    time.sleep(2**attempt)
-            except json.JSONDecodeError as e:
-                print(f"   ❌ Invalid response: {e}")
-                break
+                    print(f"      🔄 Retrying in {2 ** (attempt + 1)}s...")
+                    time.sleep(2 ** (attempt + 1))
 
         print(f"   ❌ Failed after {self.retries} attempts")
-        total = len(payload.get("commits", []))
         return (0, total)
