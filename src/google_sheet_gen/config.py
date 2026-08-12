@@ -5,15 +5,15 @@ Configuration loading and validation.
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Any
 
 
 class ConfigLoader:
     """Handles loading and validating configuration."""
 
-    REQUIRED_FIELDS = ["google_sheet_url", "repositories"]
-
     def __init__(self, config_path: str = "config.json"):
+        self.REQUIRED_FIELDS = ["google_sheet_url", "repositories"]
+
         """
         Initialize config loader.
 
@@ -21,9 +21,9 @@ class ConfigLoader:
             config_path: Path to config file
         """
         self.config_path = Path(config_path)
-        self.config: Optional[Dict[str, Any]] = None
+        self.config: dict[str, Any] | None = None
 
-    def load(self) -> Dict[str, Any]:
+    def load(self) -> dict[str, Any]:
         """
         Load and validate configuration.
 
@@ -38,6 +38,8 @@ class ConfigLoader:
                 self.config = json.load(f)
 
             self._validate()
+            # Assert to narrow the type from dict|None to dict
+            assert self.config is not None
             return self.config
 
         except FileNotFoundError:
@@ -66,7 +68,7 @@ class ConfigLoader:
             print("❌ No repositories specified in config")
             sys.exit(1)
 
-    def get_repositories(self) -> List[str]:
+    def get_repositories(self) -> list[str]:
         """Get list of repositories from config."""
         return self.config.get("repositories", []) if self.config else []
 
@@ -74,7 +76,7 @@ class ConfigLoader:
         """Get Google Sheets web app URL."""
         return self.config.get("google_sheet_url", "") if self.config else ""
 
-    def get_settings(self) -> Dict[str, Any]:
+    def get_settings(self) -> dict[str, Any]:
         """Get settings from config."""
         return self.config.get("settings", {}) if self.config else {}
 
